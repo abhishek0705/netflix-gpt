@@ -1,12 +1,141 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Header from "../components/Header";
+import { checkValidData } from "../utils/validate";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../store/userSlice";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isSignInForm, setIsSignInForm] = useState(true);
+  const [hasErrors, setErrors] = useState({
+    error: false,
+    invalidName: null,
+    invalidEmail: null,
+    invalidPassword: null,
+    authError: null,
+  });
+
+  const email = useRef(null);
+  const password = useRef(null);
+  const fullName = useRef(null);
 
   const toggleSignInForm = () => {
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      error: false,
+    }));
     setIsSignInForm(!isSignInForm);
+    email.current.value = null;
+    password.current.value = null;
+    if (!isSignInForm) {
+      fullName.current.value = "";
+    }
   };
+
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+
+    // Reset errors
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      error: false,
+    }));
+
+    // Get validation results
+    const emailValue = email.current.value;
+    const passwordValue = password.current.value;
+    const nameValue = !isSignInForm ? fullName.current.value : "";
+
+    const validationResults = checkValidData(
+      emailValue,
+      passwordValue,
+      nameValue
+    );
+
+    // Check for errors
+    const hasErrors = {
+      invalidEmail: validationResults.email?.message || null,
+      invalidPassword: validationResults.password?.message || null,
+      invalidName:
+        validationResults.name && !isSignInForm
+          ? validationResults.name.message
+          : null,
+    };
+
+    // Update errors if any
+    if (Object.values(hasErrors).some((message) => message !== null)) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        error: true,
+        ...hasErrors,
+      }));
+    } else {
+      if (!isSignInForm) {
+        createUserWithEmailAndPassword(auth, emailValue, passwordValue)
+          .then((userCredential) => {
+            updateProfile(userCredential.user, {
+              displayName: nameValue,
+              photoURL:
+                "https://lh3.googleusercontent.com/a/ACg8ocKuUzhhRL4cPVDx_VefHNV5YYdnadiBycsustJczfW-k_NxVX1o=s576-c-no",
+            })
+              .then(() => {
+                const { uid, email, displayName, photoURL } = auth.currentUser;
+                dispatch(
+                  addUser({
+                    uid: uid,
+                    email: email,
+                    displayName: displayName,
+                    photoURL: photoURL,
+                  })
+                );
+                navigate("/browse");
+              })
+              .catch((error) => {
+                console.log("🚀 ~ .then ~ error:", error);
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                setErrors((prevErrors) => ({
+                  ...prevErrors,
+                  error: true,
+                  authError: `${errorCode}: ${errorMessage}`,
+                }));
+              });
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            setErrors((prevErrors) => ({
+              ...prevErrors,
+              error: true,
+              authError: `${errorCode}: ${errorMessage}`,
+            }));
+          });
+      } else {
+        signInWithEmailAndPassword(auth, emailValue, passwordValue)
+          .then(() => {
+            navigate("/browse");
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            setErrors((prevErrors) => ({
+              ...prevErrors,
+              error: true,
+              authError: `${errorCode}: ${errorMessage}`,
+            }));
+          });
+      }
+    }
+  };
+
   return (
     <div>
       <Header />
@@ -22,24 +151,42 @@ const Login = () => {
         </h1>
         {!isSignInForm && (
           <input
+            ref={fullName}
             type="text"
             placeholder="Full Name"
             className="p-4 my-4 w-full rounded-sm bg-gray-700"
           />
         )}
+        {!isSignInForm && hasErrors.error && hasErrors.invalidName && (
+          <p className="text-red-600">*{hasErrors.invalidName}</p>
+        )}
         <input
+          ref={email}
           type="text"
           placeholder="Email Address"
           className="p-4 my-4 w-full rounded-sm bg-gray-700"
         />
+        {hasErrors.error && hasErrors.invalidEmail && (
+          <p className="text-red-600">*{hasErrors.invalidEmail}</p>
+        )}
         <input
+          ref={password}
           type="password"
           placeholder="Password"
           className="p-4 my-4 w-full rounded-sm bg-gray-700"
         />
-        <button className="p-4 my-4 bg-red-700 w-full rounded-sm">
+        {hasErrors.error && hasErrors.invalidPassword && (
+          <p className="text-red-600 ">*{hasErrors.invalidPassword}</p>
+        )}
+        <button
+          className="p-4 my-4 bg-red-700 w-full rounded-sm"
+          onClick={handleButtonClick}
+        >
           {isSignInForm ? "Sign In" : "Sign Up"}
         </button>
+        {hasErrors.error && hasErrors.authError && (
+          <p className="text-red-600 ">*{hasErrors.authError}</p>
+        )}
         <p className="py-4 cursor-pointer" onClick={toggleSignInForm}>
           {isSignInForm
             ? "New to Netflix? Sign Up Now"
