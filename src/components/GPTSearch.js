@@ -6,7 +6,7 @@ import { BG_LOGIN_IMAGE } from "../utils/constant";
 const GPTSearch = () => {
   return (
     <div>
-      <div className="absolute -z-10">
+      <div className="fixed -z-10">
         <img src={BG_LOGIN_IMAGE} alt="bg-image" />
       </div>
       <GPTSearchBar />
