@@ -4,12 +4,16 @@ import { auth } from "../utils/firebase";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser, removeUser } from "../store/userSlice";
-import { LOGO, USER_AVATAR } from "../utils/constant";
+import { LOGO, SUPPORTED_LANGUAGES, USER_AVATAR } from "../utils/constant";
+import { toggleGptSearchView } from "../store/gptSlice";
+import { changeLanguage } from "../store/configSlice";
 
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((store) => store.user);
+  const gptStore = useSelector((store) => store.gpt);
+  const { showGptSearch } = gptStore || {};
 
   useEffect(() => {
     const unsubscribeAuthListener = onAuthStateChanged(auth, (user) => {
@@ -39,12 +43,37 @@ const Header = () => {
         navigate("/error");
       });
   };
+  const handleGPTSearch = () => {
+    dispatch(toggleGptSearchView());
+  };
+
+  const handleLanguageChange = (e) => {
+    dispatch(changeLanguage(e.target.value));
+  };
   return (
     <div className="absolute px-8 py-8 bg-gradient-to-b from-black z-10 w-full flex justify-between">
       <img src={LOGO} alt="logo" className="w-36" />
       {user && (
         <div className="flex text-center">
-          <h1 className="text-white self-center mx-2">{user?.displayName}</h1>
+          {showGptSearch && (
+            <select
+              onChange={handleLanguageChange}
+              className="p-2 m-2 bg-gray-900 text-white rounded-lg"
+            >
+              {SUPPORTED_LANGUAGES.map((item) => (
+                <option value={item.identifier} key={item.identifier}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <button
+            className="py-2 px-4 text-white mx-4 my-2 rounded-lg bg-purple-800"
+            onClick={handleGPTSearch}
+          >
+            {showGptSearch ? "Home" : "GPT Search 🔍"}
+          </button>
+
           <img
             src={user?.photoURL || USER_AVATAR}
             alt="userIcon"
