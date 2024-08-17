@@ -7,12 +7,11 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { auth } from "../utils/firebase";
-import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addUser } from "../store/userSlice";
+import { BG_LOGIN_IMAGE, USER_AVATAR } from "../utils/constant";
 
 const Login = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isSignInForm, setIsSignInForm] = useState(true);
   const [hasErrors, setErrors] = useState({
@@ -83,8 +82,7 @@ const Login = () => {
           .then((userCredential) => {
             updateProfile(userCredential.user, {
               displayName: nameValue,
-              photoURL:
-                "https://lh3.googleusercontent.com/a/ACg8ocKuUzhhRL4cPVDx_VefHNV5YYdnadiBycsustJczfW-k_NxVX1o=s576-c-no",
+              photoURL: USER_AVATAR,
             })
               .then(() => {
                 const { uid, email, displayName, photoURL } = auth.currentUser;
@@ -96,10 +94,8 @@ const Login = () => {
                     photoURL: photoURL,
                   })
                 );
-                navigate("/browse");
               })
               .catch((error) => {
-                console.log("🚀 ~ .then ~ error:", error);
                 const errorCode = error.code;
                 const errorMessage = error.message;
                 setErrors((prevErrors) => ({
@@ -120,9 +116,7 @@ const Login = () => {
           });
       } else {
         signInWithEmailAndPassword(auth, emailValue, passwordValue)
-          .then(() => {
-            navigate("/browse");
-          })
+          .then(() => {})
           .catch((error) => {
             const errorCode = error.code;
             const errorMessage = error.message;
@@ -140,10 +134,7 @@ const Login = () => {
     <div>
       <Header />
       <div className="absolute ">
-        <img
-          src="https://assets.nflxext.com/ffe/siteui/vlv3/20bf1f4d-1c73-48fd-8689-310d6dd80efc/81bdc063-cb8f-4afe-8a02-a3131ca4ef5e/IN-en-20240812-POP_SIGNUP_TWO_WEEKS-perspective_WEB_7998f3b6-63e3-424a-8328-550cf777ddce_large.jpg"
-          alt="bg-image"
-        />
+        <img src={BG_LOGIN_IMAGE} alt="bg-image" />
       </div>
       <form className="absolute bg-black p-12 w-3/12 my-36 mx-auto right-0 left-0 text-white bg-opacity-90 rounded-md">
         <h1 className="font-bold text-3xl py-4">
