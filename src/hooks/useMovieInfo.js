@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from "react";
 import { TMDB_API_OPTIONS } from "../utils/constant";
 import { addMovieTrailerVideo } from "../store/moviesSlice";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 const useMovieInfo = (movieId) => {
   const dispatch = useDispatch();
+  const movies = useSelector((store) => store.movies);
+  const { movieTrailerVideo } = movies || {};
   const fetchMovieInfo = useCallback(async () => {
     if (movieId) {
       const data = await fetch(
@@ -17,8 +19,8 @@ const useMovieInfo = (movieId) => {
   }, [dispatch, movieId]);
 
   useEffect(() => {
-    fetchMovieInfo();
-  }, [fetchMovieInfo]);
+    movieTrailerVideo.length === 0 && fetchMovieInfo();
+  }, [fetchMovieInfo, movieTrailerVideo]);
 };
 
 export default useMovieInfo;
