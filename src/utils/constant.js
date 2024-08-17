@@ -20,3 +20,5 @@ export const TMDB_API_OPTIONS = {
     Authorization: "Bearer " + TMDB_API_TOKEN,
   },
 };
+
+export const TMDB_IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
